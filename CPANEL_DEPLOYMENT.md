@@ -136,6 +136,49 @@ VITE_API_URL=https://api.example.com/api npm run build
 
 Then re-upload `dist/` contents.
 
+## 10.1) Exact `.env` values to use on host/domain
+
+Use these production-oriented values when deploying to your real host/domain.
+
+### Frontend build variables (set before `npm run build`)
+
+If frontend and API are on same domain/path:
+
+```bash
+VITE_API_URL=/api
+VITE_BACKEND_URL=https://yourdomain.com
+VITE_ADMIN_USERNAME=your_admin_username
+VITE_ADMIN_PASSWORD=use_a_long_random_password
+```
+
+If API is on a dedicated subdomain (recommended):
+
+```bash
+VITE_API_URL=https://api.yourdomain.com/api
+VITE_BACKEND_URL=https://api.yourdomain.com
+VITE_ADMIN_USERNAME=your_admin_username
+VITE_ADMIN_PASSWORD=use_a_long_random_password
+```
+
+> Replace `yourdomain.com` with your actual domain (for example `example.com`).
+
+### Backend runtime variables (set in cPanel Python App)
+
+```bash
+DATABASE_URL=sqlite:////home/<cpanel_user>/apps/clinical-mastery/data/clinical_mastery.db
+ENVIRONMENT=production
+```
+
+Optional:
+
+```bash
+PYTHONUNBUFFERED=1
+```
+
+### Important note about admin credentials
+
+`VITE_ADMIN_USERNAME` and `VITE_ADMIN_PASSWORD` are frontend build variables. They are bundled into client-side JS at build time, so do **not** treat this as secure server-side authentication. For high security, move admin auth to backend session/JWT.
+
 ## 11) CORS settings
 
 If frontend and backend are on different origins, update backend CORS allowlist in `backend/app/main.py` (replace wildcard with your frontend domain), then redeploy/restart.
