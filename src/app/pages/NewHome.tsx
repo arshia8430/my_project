@@ -136,10 +136,10 @@ export default function NewHome() {
           className="mt-4"
         >
           <button
-            onClick={() => navigate("/admin")}
-            className="inline-flex items-center gap-1.5 text-xs text-blue-400/50 hover:text-blue-300/80 transition"
+            onClick={() => navigate("/admin/login") }
+            className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-blue-400/30 bg-blue-900/30 text-blue-200 hover:text-white hover:border-blue-300/70 transition"
           >
-            <Settings size={12} /> Admin Panel
+            <Settings size={14} /> Admin Panel Login
           </button>
         </motion.div>
       </motion.div>

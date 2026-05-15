@@ -3,6 +3,8 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
+const backendTarget = process.env.VITE_BACKEND_URL || "http://localhost:8000"
+
 
 function figmaAssetResolver() {
   return {
@@ -24,6 +26,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: backendTarget,
+        changeOrigin: true,
+      },
+    },
+  },
+
   resolve: {
     alias: {
       // Alias @ to the src directory

@@ -1,8 +1,17 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import NewHome from "./pages/NewHome";
 import GameStyleCase from "./pages/GameStyleCase";
 import FinalResults from "./pages/FinalResults";
 import AdminPanel from "./pages/AdminPanel";
+import AdminLogin from "./pages/AdminLogin";
+import { isAdminAuthenticated } from "./utils/adminAuth";
+
+function ProtectedAdmin() {
+  if (!isAdminAuthenticated()) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <AdminPanel />;
+}
 
 export const router = createBrowserRouter([
   {
@@ -18,7 +27,11 @@ export const router = createBrowserRouter([
     Component: FinalResults,
   },
   {
+    path: "/admin/login",
+    Component: AdminLogin,
+  },
+  {
     path: "/admin",
-    Component: AdminPanel,
+    Component: ProtectedAdmin,
   },
 ]);
