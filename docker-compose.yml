@@ -6,30 +6,26 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./clinical_mastery.db
+      - DATABASE_URL=sqlite:////app/data/clinical_mastery.db
       - ENVIRONMENT=development
     volumes:
-      - ./backend:/app
       - backend-data:/app/data
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Uncomment for PostgreSQL database
-  # db:
-  #   image: postgres:15-alpine
-  #   environment:
-  #     - POSTGRES_USER=clinical_user
-  #     - POSTGRES_PASSWORD=clinical_pass
-  #     - POSTGRES_DB=clinical_mastery
-  #   volumes:
-  #     - postgres-data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=/api
+      - VITE_BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   backend-data:
-  # postgres-data:
