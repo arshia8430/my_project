@@ -2,6 +2,21 @@
 
 This guide explains how to deploy this project to a cPanel-hosted server when you have manual access to both File Manager and the cPanel dashboard.
 
+## 0) Environment files in this repository
+
+This repository now includes env files so you can edit values directly before deployment:
+
+- Root `.env` (frontend + backend local defaults)
+- Root `.env.example` (template for sharing/team onboarding)
+- `backend/.env` (backend-local runtime defaults)
+
+Before uploading to cPanel, review and replace credentials, especially:
+
+- `VITE_ADMIN_USERNAME`
+- `VITE_ADMIN_PASSWORD`
+- `DATABASE_URL`
+
+
 ## 1) Understand the architecture
 
 - **Frontend**: Vite/React static files (`npm run build` output in `dist/`).
