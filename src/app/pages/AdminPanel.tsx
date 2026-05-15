@@ -21,6 +21,7 @@ import {
   Eye,
 } from "lucide-react";
 import { api, CaseData } from "../../services/api";
+import { logoutAdmin } from "../utils/adminAuth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1225,6 +1226,15 @@ export default function AdminPanel() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => {
+              logoutAdmin();
+              navigate("/admin/login");
+            }}
+            className="flex items-center gap-2 px-3 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-800 text-sm font-semibold rounded-lg transition"
+          >
+            Logout
+          </button>
           {view === "list" && (
             <button
               onClick={openCreate}
