@@ -59,7 +59,7 @@ This ensures React routes work on refresh.
 
 1. Go to **cPanel → Setup Python App**.
 2. Click **Create Application**:
-   - Python version: `3.11` (or highest supported).
+   - Python version: `3.10.18` (recommended by your hosting panel) or the highest available stable version.
    - Application root: `apps/clinical-mastery/backend`
    - Application URL: choose `/api` path or `api.yourdomain.com`.
    - Application startup file: `passenger_wsgi.py`
@@ -78,7 +78,7 @@ pip install -r requirements.txt
 
 > Use the exact virtual environment path shown by cPanel Python App page.
 
-## 8) Add Passenger entry file
+## 8) Add Passenger entry file (required for FastAPI)
 
 Create `passenger_wsgi.py` in backend app root (`~/apps/clinical-mastery/backend`):
 
@@ -90,6 +90,25 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from app.main import app as application
 ```
+
+For FastAPI, use this instead:
+
+```python
+import sys
+import os
+
+from a2wsgi import ASGIMiddleware
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+from app.main import app
+
+application = ASGIMiddleware(app)
+```
+
+Passenger expects a **WSGI callable** named `application`, but FastAPI is **ASGI**.  
+Without this adapter, Passenger tries to call FastAPI as WSGI and you get:
+`TypeError: FastAPI.__call__() missing 1 required positional argument: 'send'`.
 
 ## 9) Configure environment variables
 
