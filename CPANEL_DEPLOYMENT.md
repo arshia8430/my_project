@@ -59,9 +59,9 @@ This ensures React routes work on refresh.
 
 1. Go to **cPanel → Setup Python App**.
 2. Click **Create Application**:
-   - Python version: `3.11` (or highest supported).
+   - Python version: `3.10.18` (recommended by your hosting panel) or the highest available stable version.
    - Application root: `apps/clinical-mastery/backend`
-   - Application URL: choose `/api` path or `api.yourdomain.com`.
+   - Application URL: prefer `api.yourdomain.com/` (or `/` on a dedicated subdomain).
    - Application startup file: `passenger_wsgi.py`
    - Application entry point: `application`
 3. Create app.
@@ -78,18 +78,26 @@ pip install -r requirements.txt
 
 > Use the exact virtual environment path shown by cPanel Python App page.
 
-## 8) Add Passenger entry file
+## 8) Add Passenger entry file (required for FastAPI)
 
-Create `passenger_wsgi.py` in backend app root (`~/apps/clinical-mastery/backend`):
+Create `passenger_wsgi.py` in backend app root (`~/apps/clinical-mastery/backend`) with this exact content:
 
 ```python
 import sys
 import os
 
+from a2wsgi import ASGIMiddleware
+
 sys.path.insert(0, os.path.dirname(__file__))
 
-from app.main import app as application
+from app.main import app
+
+application = ASGIMiddleware(app)
 ```
+
+Passenger expects a **WSGI callable** named `application`, but FastAPI is **ASGI**.  
+Without this adapter, Passenger tries to call FastAPI as WSGI and you get:
+`TypeError: FastAPI.__call__() missing 1 required positional argument: 'send'`.
 
 ## 9) Configure environment variables
 
@@ -107,17 +115,21 @@ mkdir -p ~/apps/clinical-mastery/data
 
 ## 10) Connect frontend to backend URL
 
-If backend is at `/api`, set frontend build-time variable before build:
+This backend already defines route prefixes as `/api/...` inside FastAPI (`/api/cases`, `/api/results`, `/api/stats`).
+
+- If your cPanel Application URL is `/` (or a dedicated API subdomain root), use:
 
 ```bash
 VITE_API_URL=/api npm run build
 ```
 
-If backend is at subdomain (recommended), e.g. `https://api.example.com/api`:
+- If your API is on subdomain root (recommended), e.g. `https://api.example.com`, use:
 
 ```bash
 VITE_API_URL=https://api.example.com/api npm run build
 ```
+
+> Avoid setting cPanel Application URL to `/api` **and** `VITE_API_URL` ending in `/api`, otherwise requests may become `/api/api/...`.
 
 Then re-upload `dist/` contents.
 
