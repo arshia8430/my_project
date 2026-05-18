@@ -136,6 +136,22 @@ docker run -p 8000:8000 clinical-mastery-api
 gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
+### روی cPanel (Passenger / WSGI)
+
+Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند، اما FastAPI از نوع ASGI است.  
+بنابراین باید در ریشه‌ی `backend` فایل `passenger_wsgi.py` داشته باشید:
+
+```python
+from a2wsgi import ASGIMiddleware
+from app.main import app
+
+application = ASGIMiddleware(app)
+```
+
+و در cPanel تنظیم کنید:
+- **Application startup file**: `passenger_wsgi.py`
+- **Application entry point**: `application`
+
 ## متغیرهای محیطی
 
 - `DATABASE_URL` - آدرس دیتابیس (پیش‌فرض: SQLite)
