@@ -2,6 +2,21 @@
 
 This guide explains how to deploy this project to a cPanel-hosted server when you have manual access to both File Manager and the cPanel dashboard.
 
+## 0) Environment files in this repository
+
+This repository now includes env files so you can edit values directly before deployment:
+
+- Root `.env` (frontend + backend local defaults)
+- Root `.env.example` (template for sharing/team onboarding)
+- `backend/.env` (backend-local runtime defaults)
+
+Before uploading to cPanel, review and replace credentials, especially:
+
+- `VITE_ADMIN_USERNAME`
+- `VITE_ADMIN_PASSWORD`
+- `DATABASE_URL`
+
+
 ## 1) Understand the architecture
 
 - **Frontend**: Vite/React static files (`npm run build` output in `dist/`).
@@ -120,6 +135,49 @@ VITE_API_URL=https://api.example.com/api npm run build
 ```
 
 Then re-upload `dist/` contents.
+
+## 10.1) Exact `.env` values to use on host/domain
+
+Use these production-oriented values when deploying to your real host/domain.
+
+### Frontend build variables (set before `npm run build`)
+
+If frontend and API are on same domain/path:
+
+```bash
+VITE_API_URL=/api
+VITE_BACKEND_URL=https://yourdomain.com
+VITE_ADMIN_USERNAME=your_admin_username
+VITE_ADMIN_PASSWORD=use_a_long_random_password
+```
+
+If API is on a dedicated subdomain (recommended):
+
+```bash
+VITE_API_URL=https://api.yourdomain.com/api
+VITE_BACKEND_URL=https://api.yourdomain.com
+VITE_ADMIN_USERNAME=your_admin_username
+VITE_ADMIN_PASSWORD=use_a_long_random_password
+```
+
+> Replace `yourdomain.com` with your actual domain (for example `example.com`).
+
+### Backend runtime variables (set in cPanel Python App)
+
+```bash
+DATABASE_URL=sqlite:////home/<cpanel_user>/apps/clinical-mastery/data/clinical_mastery.db
+ENVIRONMENT=production
+```
+
+Optional:
+
+```bash
+PYTHONUNBUFFERED=1
+```
+
+### Important note about admin credentials
+
+`VITE_ADMIN_USERNAME` and `VITE_ADMIN_PASSWORD` are frontend build variables. They are bundled into client-side JS at build time, so do **not** treat this as secure server-side authentication. For high security, move admin auth to backend session/JWT.
 
 ## 11) CORS settings
 

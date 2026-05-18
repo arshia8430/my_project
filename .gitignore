@@ -1,0 +1,10 @@
+# Dependencies / build artifacts
+node_modules/
+dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Keep .env tracked TEMPORARILY per request
+!.env
