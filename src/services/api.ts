@@ -17,6 +17,9 @@ export interface CaseData {
   stages: any[];
   difficulty: string;
   category: string;
+  icd10_code: string;
+  case_type: "emergency" | "clinic";
+  created_at: string;
 }
 
 export interface ResultData {

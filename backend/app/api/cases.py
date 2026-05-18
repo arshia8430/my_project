@@ -72,7 +72,9 @@ def create_case(case: CaseCreate, db: Session = Depends(get_db)):
         initial_vitals=case.initial_vitals.model_dump(),
         stages=[stage.model_dump() for stage in case.stages],
         difficulty=case.difficulty,
-        category=case.category
+        category=case.category,
+        icd10_code=case.icd10_code,
+        case_type=case.case_type
     )
 
     db.add(db_case)
@@ -105,6 +107,8 @@ def update_case(case_id: str, case: CaseCreate, db: Session = Depends(get_db)):
     db_case.stages = [stage.model_dump() for stage in case.stages]
     db_case.difficulty = case.difficulty
     db_case.category = case.category
+    db_case.icd10_code = case.icd10_code
+    db_case.case_type = case.case_type
 
     db.commit()
     db.refresh(db_case)
@@ -129,6 +133,10 @@ def seed_cases(db: Session):
         existing = db.query(Case).filter(Case.case_id == case_data["case_id"]).first()
         if not existing:
             db_case = Case(**case_data)
+            if not db_case.icd10_code:
+                db_case.icd10_code = "R69"
+            if not db_case.case_type:
+                db_case.case_type = "clinic"
             db.add(db_case)
 
     db.commit()

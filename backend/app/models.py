@@ -19,6 +19,9 @@ class Case(Base):
     stages = Column(JSON, nullable=False)
     difficulty = Column(String, nullable=False)
     category = Column(String, nullable=False)
+    icd10_code = Column(String, nullable=False, default="R69")
+    case_type = Column(String, nullable=False, default="clinic")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class Result(Base):
