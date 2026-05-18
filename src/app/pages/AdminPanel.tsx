@@ -56,6 +56,8 @@ interface CaseForm {
   diet: string;
   difficulty: string;
   category: string;
+  icd10_code: string;
+  case_type: "emergency" | "clinic";
   initial_vitals: VitalsData;
   stages: Stage[];
 }
@@ -73,6 +75,8 @@ const defaultForm = (): CaseForm => ({
   diet: "regular",
   difficulty: "medium",
   category: "Emergency Medicine",
+  icd10_code: "R69",
+  case_type: "clinic",
   initial_vitals: { ...defaultVitals },
   stages: [],
 });
@@ -612,6 +616,7 @@ function CaseFormPanel({
     if (!form.case_id.trim()) return setError("Case ID is required.");
     if (!form.name.trim()) return setError("Case name is required.");
     if (!form.diagnosis.trim()) return setError("Diagnosis is required.");
+    if (!form.icd10_code.trim()) return setError("ICD-10 code is required.");
     if (form.stages.length === 0)
       return setError("Add at least one stage before saving.");
     for (const [i, s] of form.stages.entries()) {
@@ -754,6 +759,35 @@ function CaseFormPanel({
               />
             </Field>
           </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Field label="ICD-10 Code" required>
+              <input
+                type="text"
+                className={inputCls}
+                value={form.icd10_code}
+                onChange={(e) => setF("icd10_code", e.target.value.toUpperCase())}
+                placeholder="e.g. I63.9"
+              />
+            </Field>
+            <Field label="Case Type" required>
+              <select
+                className={selectCls}
+                value={form.case_type}
+                onChange={(e) => setF("case_type", e.target.value as "emergency" | "clinic")}
+              >
+                <option value="emergency">Emergency</option>
+                <option value="clinic">Clinic</option>
+              </select>
+            </Field>
+            <Field label="Created Date">
+              <input
+                type="text"
+                className={inputCls}
+                value={initial?.created_at ? new Date(initial.created_at).toLocaleString() : "Will be set automatically"}
+                readOnly
+              />
+            </Field>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Position">
               <input
@@ -880,6 +914,11 @@ function CaseCard({
         {difficultyBadge(c.difficulty)}
         {conditionBadge(c.condition)}
         <Badge label={c.category} color="bg-slate-100 text-slate-600" />
+        <Badge label={c.icd10_code} color="bg-violet-100 text-violet-700" />
+        <Badge
+          label={c.case_type === "emergency" ? "Emergency" : "Clinic"}
+          color={c.case_type === "emergency" ? "bg-rose-100 text-rose-700" : "bg-cyan-100 text-cyan-700"}
+        />
       </div>
 
       <div className="flex items-center gap-3 text-xs text-slate-400">
@@ -889,8 +928,9 @@ function CaseCard({
         <span className="flex items-center gap-1">
           <HelpCircle size={11} /> {questionCount} questions
         </span>
-        <span className="ml-auto font-mono text-slate-300 text-[10px]">{c.case_id}</span>
+      <span className="ml-auto font-mono text-slate-300 text-[10px]">{c.case_id}</span>
       </div>
+      <p className="text-[11px] text-slate-400">Created: {new Date(c.created_at).toLocaleDateString()}</p>
 
       <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
         <button
@@ -1150,6 +1190,8 @@ export default function AdminPanel() {
       diet: c.diet,
       difficulty: c.difficulty,
       category: c.category,
+      icd10_code: c.icd10_code ?? "R69",
+      case_type: c.case_type ?? "clinic",
       initial_vitals: { ...c.initial_vitals } as VitalsData,
       stages: JSON.parse(JSON.stringify(c.stages ?? [])) as Stage[],
     });

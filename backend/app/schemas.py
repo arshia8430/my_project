@@ -30,6 +30,8 @@ class CaseBase(BaseModel):
     stages: List[Stage]
     difficulty: str
     category: str
+    icd10_code: str
+    case_type: str
 
 
 class CaseCreate(CaseBase):
@@ -38,6 +40,7 @@ class CaseCreate(CaseBase):
 
 class CaseResponse(CaseBase):
     id: int
+    created_at: datetime
 
     class Config:
         from_attributes = True
