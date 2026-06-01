@@ -7,11 +7,9 @@ Run this on the cPanel host after activating the Python App virtualenv:
 
 For a same-domain Python App mounted at https://example.com/api, use:
 
-    API_PREFIX= CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py
+    CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py
 
-For a dedicated API subdomain/root, use:
-
-    API_PREFIX=/api python scripts/cpanel_smoke_test.py
+For a dedicated API subdomain/root, just run the default command above.
 """
 
 from __future__ import annotations
@@ -29,11 +27,11 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 
-def _load_application():
-    from cpanel_wsgi import application
-    from app.main import API_PREFIX
+def _load_application(startup_module: str):
+    module = __import__(startup_module, fromlist=["application"])
+    from app.main import API_MOUNT
 
-    return application, API_PREFIX
+    return module.application, API_MOUNT
 
 
 def _call_wsgi(application, path: str, script_name: str = "") -> tuple[int, dict[str, str], bytes]:
@@ -94,14 +92,28 @@ def main() -> int:
         default=os.getenv("CPANEL_SCRIPT_NAME", ""),
         help="WSGI SCRIPT_NAME used by Passenger for path-mounted apps, e.g. /api",
     )
+    parser.add_argument(
+        "--startup-module",
+        default=os.getenv("CPANEL_STARTUP_MODULE", "cpanel_wsgi"),
+        choices=["cpanel_wsgi", "passenger_wsgi"],
+        help="Startup module to import for the smoke test.",
+    )
     args = parser.parse_args()
 
-    application, api_prefix = _load_application()
-    script_name = args.script_name.rstrip("/")
-    api_path = f"{api_prefix}/cases/random" if api_prefix else "/cases/random"
+    try:
+        application, api_mount = _load_application(args.startup_module)
+    except Exception as exc:
+        database_url = os.getenv("DATABASE_URL")
+        print(f"Failed to import {args.startup_module}.application.", file=sys.stderr)
+        print(f"DATABASE_URL={database_url!r}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr)
+        raise
 
-    print(f"Loaded cpanel_wsgi.application successfully")
-    print(f"API_PREFIX={api_prefix!r}; SCRIPT_NAME={script_name!r}")
+    script_name = args.script_name.rstrip("/")
+    api_path = f"{api_mount}/cases/random" if api_mount else "/cases/random"
+
+    print(f"Loaded {args.startup_module}.application successfully")
+    print(f"API_MOUNT={api_mount!r}; SCRIPT_NAME={script_name!r}")
 
     health = _assert_json_ok(application, "/health", script_name)
     print(f"/health ok: {health}")

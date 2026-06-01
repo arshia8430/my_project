@@ -1,11 +1,11 @@
-# cPanel Deployment Guide (Frontend + FastAPI Backend)
+# cPanel Deployment Guide (Frontend + WSGI Backend)
 
 This guide explains how to deploy this project to a cPanel-hosted server when you have manual access to both File Manager and the cPanel dashboard.
 
 ## 1) Understand the architecture
 
 - **Frontend**: Vite/React static files (`npm run build` output in `dist/`).
-- **Backend**: FastAPI app (`backend/app`) run by **Setup Python App** in cPanel through Passenger/WSGI (`backend/cpanel_wsgi.py`).
+- **Backend**: synchronous Python WSGI app (`backend/app/wsgi.py`) run by **Setup Python App** in cPanel through Passenger (`backend/cpanel_wsgi.py` or `backend/passenger_wsgi.py`).
 - **Database**: SQLite file on server disk (or switch to MySQL/PostgreSQL for production-scale traffic).
 
 ## 2) Requirements on hosting
@@ -83,28 +83,33 @@ pip install -r requirements.txt
 
 > Use the exact virtual environment path shown by cPanel Python App page.
 
-## 8) cPanel startup file (required for FastAPI)
+## 8) cPanel startup file (plain WSGI)
 
-The backend includes `cpanel_wsgi.py` in the backend app root. Use this file in **Setup Python App**:
+The backend includes both `cpanel_wsgi.py` and `passenger_wsgi.py` in the backend app root. Keep **both files uploaded**. Some cPanel/Passenger setups still probe for `passenger_wsgi.py` even when the UI shows another startup file.
+
+Recommended setting:
 
 ```text
 Application startup file: cpanel_wsgi.py
 Application entry point: application
 ```
 
-Passenger expects a **WSGI callable** named `application`, but FastAPI is **ASGI**. `cpanel_wsgi.py` wraps FastAPI with `a2wsgi.ASGIMiddleware`.
+If your host returns 404 when `passenger_wsgi.py` is missing, that host requires the filename to exist. Do not delete it. In this project both `cpanel_wsgi.py` and `passenger_wsgi.py` load the same shared WSGI application from `wsgi_entry.py`.
 
-Do **not** set the cPanel startup file to `passenger_wsgi.py` on hosts that generate a Passenger wrapper. Some panels create a `passenger_wsgi.py` wrapper internally; selecting that same file as the startup target can make it import itself repeatedly and end in `RecursionError: maximum recursion depth exceeded`.
+Passenger expects a **WSGI callable** named `application`. The shared entrypoint exposes a plain synchronous WSGI callable directly; no `uvicorn`, event loop, `a2wsgi`, or `ASGIMiddleware` is used.
+
+If logs show `RecursionError: maximum recursion depth exceeded` with `imp.load_source(..., 'passenger_wsgi.py')`, overwrite `passenger_wsgi.py` with the project version instead of the cPanel-generated default wrapper.
 
 ## 9) Configure environment variables
 
 In **Setup Python App**, add environment variables:
 
 - `DATABASE_URL=sqlite:////home/<cpanel_user>/apps/clinical-mastery/data/clinical_mastery.db`
+  - Example for this hosting account: `DATABASE_URL=sqlite:////home/clinicalexamir/apps/clinical-mastery/data/clinical_mastery.db`
+  - Do not paste the variable name into the value field, do not wrap the value in quotes, and do not add spaces.
 - `ENVIRONMENT=production`
 - `PYTHONUNBUFFERED=1`
-- `API_PREFIX=/api` when the Python App is mounted on a dedicated API subdomain/root
-- `API_PREFIX=` (empty value) when the Python App URL itself is `yourdomain.com/api`; if your panel does not allow an empty value, use `API_PREFIX=/`
+- Public routes are served under `/api`. If the Python App URL itself is `yourdomain.com/api`, Passenger may pass either `/health` or `/api/health` internally; the WSGI app accepts both shapes.
 
 Create data dir once:
 
@@ -114,14 +119,12 @@ mkdir -p ~/apps/clinical-mastery/data
 
 ## 10) Connect frontend to backend URL
 
-The backend API route prefix is controlled by the `API_PREFIX` environment variable.
+The backend public API is mounted under `/api`.
 
 - Dedicated API subdomain/root, e.g. `https://api.example.com`:
-  - Backend env: `API_PREFIX=/api`
   - Frontend build env: `VITE_API_URL=https://api.example.com/api`
 
 - Same-domain cPanel path, e.g. Python App URL `https://example.com/api`:
-  - Backend env: `API_PREFIX=` (empty; or `API_PREFIX=/` if cPanel rejects empty values)
   - Frontend build env: `VITE_API_URL=https://example.com/api`
 
 Then rebuild the frontend and re-upload `dist/` contents.
@@ -143,8 +146,8 @@ Database health check:
 - Same-domain path mount: `https://example.com/api/health/db`
 
 Verify API endpoints:
-- Dedicated subdomain/root with `API_PREFIX=/api`: `GET https://api.example.com/api/cases/random`
-- Same-domain path mount with `API_PREFIX=`: `GET https://example.com/api/cases/random`
+- Dedicated subdomain/root: `GET https://api.example.com/api/cases/random`
+- Same-domain path mount: `GET https://example.com/api/cases/random`
 
 Verify frontend:
 - Open site and start a case.
@@ -173,17 +176,18 @@ Run these from cPanel Terminal after activating the Python virtualenv:
 
 ```bash
 cd ~/apps/clinical-mastery/backend
-python -c "from cpanel_wsgi import application; print('wsgi ok')"
+python -c "from cpanel_wsgi import application; print('cpanel wsgi ok')"
+python -c "from passenger_wsgi import application; print('passenger wsgi ok')"
 python -c "from app.main import app; print(app.title)"
-API_PREFIX= CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py
+CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py
 curl -i --max-time 20 https://example.com/api/health
 curl -i --max-time 20 https://example.com/api/health/db
 ```
 
 Expected results:
-- `wsgi ok` means cPanel can import the same startup module that Passenger uses.
-- `scripts/cpanel_smoke_test.py` calls `cpanel_wsgi.application` directly like Passenger, verifies `/health`, verifies `/health/db`, seeds/reads a random case, and fails if the response is not JSON/200.
+- `cpanel wsgi ok` and `passenger wsgi ok` mean both possible cPanel/Passenger startup filenames can import the same app.
+- `scripts/cpanel_smoke_test.py` calls the selected startup module (`cpanel_wsgi` by default, or `passenger_wsgi` with `--startup-module passenger_wsgi`) directly like Passenger, verifies `/health`, verifies `/health/db`, seeds/reads a random case, and fails if the response is not JSON/200.
 - `/health` should respond even if the database has a problem.
 - `/health/db` verifies SQLite path, permissions, table creation, and migrations.
 
-If logs show `RecursionError: maximum recursion depth exceeded` with `imp.load_source(..., 'passenger_wsgi.py')`, the cPanel startup file is wrong. Set **Application startup file** to `cpanel_wsgi.py`, not `passenger_wsgi.py`, then restart the Python App.
+If logs show `RecursionError: maximum recursion depth exceeded` with `imp.load_source(..., 'passenger_wsgi.py')`, overwrite `passenger_wsgi.py` with the project version and restart the Python App. If logs show `Could not parse SQLAlchemy URL`, fix the `DATABASE_URL` value in cPanel; it must look like `sqlite:////home/clinicalexamir/apps/clinical-mastery/data/clinical_mastery.db`.

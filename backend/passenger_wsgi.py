@@ -1,8 +1,7 @@
-"""Compatibility Passenger entrypoint.
+"""Passenger startup filename that exposes the plain WSGI application.
 
-Prefer `cpanel_wsgi.py` as the cPanel **Application startup file**. This module
-remains for hosts that execute `passenger_wsgi.py` directly instead of using it
-as a generated wrapper.
+Keep this file uploaded on cPanel; some Passenger setups still require this
+filename even when the UI is configured to use `cpanel_wsgi.py`.
 """
 
-from cpanel_wsgi import application
+from wsgi_entry import application
