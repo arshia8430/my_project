@@ -43,6 +43,8 @@ backend/
 │       └── seed_cases.py    # داده‌های اولیه
 ├── cpanel_wsgi.py        # cPanel/Passenger startup file
 ├── passenger_wsgi.py     # compatibility import for direct Passenger setups
+├── scripts/
+│   └── cpanel_smoke_test.py  # Passenger-style WSGI smoke test
 ├── requirements.txt
 └── README.md
 ```
@@ -146,7 +148,7 @@ Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند، اما F
 - **Application startup file**: `cpanel_wsgi.py`
 - **Application entry point**: `application`
 
-اگر برنامه را روی مسیر `clinicalexam.ir/api` mount می‌کنید، متغیر محیطی `API_PREFIX` را خالی بگذارید (اگر cPanel مقدار خالی قبول نکرد، `/` بگذارید) تا endpoint نهایی `clinicalexam.ir/api/cases/random` شود. اگر برنامه روی ریشه‌ی ساب‌دامین API است، `API_PREFIX=/api` بگذارید.
+اگر برنامه را روی مسیر `clinicalexam.ir/api` mount می‌کنید، متغیر محیطی `API_PREFIX` را خالی بگذارید (اگر cPanel مقدار خالی قبول نکرد، `/` بگذارید) تا endpoint نهایی `clinicalexam.ir/api/cases/random` شود. اگر برنامه روی ریشه‌ی ساب‌دامین API است، `API_PREFIX=/api` بگذارید. برای تست شبیه Passenger بعد از فعال‌کردن virtualenv بزنید: `API_PREFIX= CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py`.
 
 ## متغیرهای محیطی
 

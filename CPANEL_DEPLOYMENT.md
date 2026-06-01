@@ -128,7 +128,7 @@ Then rebuild the frontend and re-upload `dist/` contents.
 
 ## 11) CORS settings
 
-If frontend and backend are on different origins, update backend CORS allowlist in `backend/app/main.py` (replace wildcard with your frontend domain), then redeploy/restart.
+If frontend and backend are on different origins, set `CORS_ORIGINS` in cPanel, for example `CORS_ORIGINS=https://clinicalexam.ir`, then restart the Python App.
 
 ## 12) Restart app and verify
 
@@ -175,12 +175,14 @@ Run these from cPanel Terminal after activating the Python virtualenv:
 cd ~/apps/clinical-mastery/backend
 python -c "from cpanel_wsgi import application; print('wsgi ok')"
 python -c "from app.main import app; print(app.title)"
+API_PREFIX= CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py
 curl -i --max-time 20 https://example.com/api/health
 curl -i --max-time 20 https://example.com/api/health/db
 ```
 
 Expected results:
 - `wsgi ok` means cPanel can import the same startup module that Passenger uses.
+- `scripts/cpanel_smoke_test.py` calls `cpanel_wsgi.application` directly like Passenger, verifies `/health`, verifies `/health/db`, seeds/reads a random case, and fails if the response is not JSON/200.
 - `/health` should respond even if the database has a problem.
 - `/health/db` verifies SQLite path, permissions, table creation, and migrations.
 
