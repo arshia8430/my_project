@@ -41,6 +41,8 @@ backend/
 │   │   └── stats.py         # API endpoints آمار
 │   └── data/
 │       └── seed_cases.py    # داده‌های اولیه
+├── cpanel_wsgi.py        # cPanel/Passenger startup file
+├── passenger_wsgi.py     # compatibility import for direct Passenger setups
 ├── requirements.txt
 └── README.md
 ```
@@ -138,24 +140,19 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
 
 ### روی cPanel (Passenger / WSGI)
 
-Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند، اما FastAPI از نوع ASGI است.  
-بنابراین باید در ریشه‌ی `backend` فایل `passenger_wsgi.py` داشته باشید:
+Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند، اما FastAPI از نوع ASGI است. این پروژه فایل آماده‌ی `cpanel_wsgi.py` دارد که FastAPI را با `a2wsgi` برای Passenger آماده می‌کند.
 
-```python
-from a2wsgi import ASGIMiddleware
-from app.main import app
-
-application = ASGIMiddleware(app)
-```
-
-و در cPanel تنظیم کنید:
-- **Application startup file**: `passenger_wsgi.py`
+در cPanel تنظیم کنید:
+- **Application startup file**: `cpanel_wsgi.py`
 - **Application entry point**: `application`
+
+اگر برنامه را روی مسیر `clinicalexam.ir/api` mount می‌کنید، متغیر محیطی `API_PREFIX` را خالی بگذارید (اگر cPanel مقدار خالی قبول نکرد، `/` بگذارید) تا endpoint نهایی `clinicalexam.ir/api/cases/random` شود. اگر برنامه روی ریشه‌ی ساب‌دامین API است، `API_PREFIX=/api` بگذارید.
 
 ## متغیرهای محیطی
 
 - `DATABASE_URL` - آدرس دیتابیس (پیش‌فرض: SQLite)
-- `SECRET_KEY` - کلید امنیتی برای JWT
+- `API_PREFIX` - پیش‌فرض `/api`; برای cPanel path mount مثل `clinicalexam.ir/api` مقدار را خالی بگذارید
+- `CORS_ORIGINS` - لیست originهای مجاز با کاما، مثل `https://clinicalexam.ir`
 - `ENVIRONMENT` - محیط اجرا (development/production)
 
 ## لایسنس
