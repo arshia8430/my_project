@@ -3,5 +3,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
-EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY scripts ./scripts
+COPY cpanel_wsgi.py passenger_wsgi.py wsgi_entry.py ./
+CMD ["python", "scripts/cpanel_smoke_test.py"]
