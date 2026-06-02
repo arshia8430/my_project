@@ -160,6 +160,21 @@ function Field({
 const inputCls =
   "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-slate-300";
 
+const rtlTextStyle: CSSProperties = {
+  direction: "rtl",
+  textAlign: "right",
+  unicodeBidi: "plaintext",
+};
+
+const ltrTextStyle: CSSProperties = {
+  direction: "ltr",
+  textAlign: "left",
+  unicodeBidi: "plaintext",
+};
+
+const rtlTextProps = { dir: "rtl" as const, style: rtlTextStyle };
+const ltrTextProps = { dir: "ltr" as const, style: ltrTextStyle };
+
 const selectCls =
   "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition";
 
