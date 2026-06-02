@@ -145,8 +145,6 @@ Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند. این پ
 
 همه routeهای عمومی زیر `/api` هستند. برای تست شبیه Passenger بعد از فعال‌کردن virtualenv بزنید: `CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py`.
 
-اگر برنامه را روی مسیر `clinicalexam.ir/api` mount می‌کنید، متغیر محیطی `API_PREFIX` را خالی بگذارید (اگر cPanel مقدار خالی قبول نکرد، `/` بگذارید) تا endpoint نهایی `clinicalexam.ir/api/cases/random` شود. اگر برنامه روی ریشه‌ی ساب‌دامین API است، `API_PREFIX=/api` بگذارید. برای تست شبیه Passenger بعد از فعال‌کردن virtualenv بزنید: `API_PREFIX= CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py`.
-
 ## متغیرهای محیطی
 
 - `DATABASE_URL` - آدرس دیتابیس (پیش‌فرض: SQLite). روی cPanel مقدار نمونه: `sqlite:////home/clinicalexamir/apps/clinical-mastery/data/clinical_mastery.db`
