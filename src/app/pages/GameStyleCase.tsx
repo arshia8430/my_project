@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { HospitalOrderSheet, HospitalOrder } from "../components/HospitalOrderSheet";
 import { PatientDeteriorationAlert } from "../components/PatientDeteriorationAlert";
 import { api, CaseData, generateSessionId } from "../../services/api";
+import { rtlMixedBlockProps, rtlMixedTextProps } from "../utils/bidi";
 
 interface Vitals {
   hr: number;
@@ -308,8 +309,8 @@ export default function GameStyleCase() {
             <div className="flex items-center gap-4">
               <Activity className="w-8 h-8 text-cyan-300" />
               <div>
-                <div className="text-sm text-cyan-200 font-semibold">{caseData.diagnosis}</div>
-                <div className="text-xs text-cyan-300">{caseData.category} — {caseData.name}</div>
+                <div className="text-sm text-cyan-200 font-semibold" {...rtlMixedTextProps}>{caseData.diagnosis}</div>
+                <div className="text-xs text-cyan-300" {...rtlMixedTextProps}>{caseData.category} — {caseData.name}</div>
               </div>
               <span className={`text-xs text-white font-bold px-2 py-0.5 rounded-full ${difficultyColor}`}>
                 {caseData.difficulty === "hard" ? "سخت" : caseData.difficulty === "medium" ? "متوسط" : "آسان"}
@@ -372,7 +373,7 @@ export default function GameStyleCase() {
                       <div>
                         <Badge className="bg-purple-600 mb-4">داستان بالینی</Badge>
                         <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 mb-6">
-                          <p className="text-gray-800 text-lg leading-relaxed text-right">
+                          <p className="text-gray-800 text-lg leading-relaxed" {...rtlMixedBlockProps}>
                             {currentStageData.question}
                           </p>
                         </div>
@@ -391,7 +392,7 @@ export default function GameStyleCase() {
                           <Badge className="bg-blue-600 mb-4">
                             سوال {completedQuestions + 1} از {questionStages.length}
                           </Badge>
-                          <h2 className="text-xl font-bold text-gray-900 leading-relaxed text-right">
+                          <h2 className="text-xl font-bold text-gray-900 leading-relaxed" {...rtlMixedBlockProps}>
                             {currentStageData.question}
                           </h2>
                         </div>
@@ -409,7 +410,7 @@ export default function GameStyleCase() {
                                 disabled={showResult}
                                 whileHover={!showResult ? { scale: 1.01 } : {}}
                                 whileTap={!showResult ? { scale: 0.99 } : {}}
-                                className={`w-full p-4 rounded-xl border-2 text-right transition-all ${
+                                className={`w-full p-4 rounded-xl border-2 transition-all ${
                                   showCorrect
                                     ? "bg-green-100 border-green-500 shadow-lg"
                                     : showWrong
@@ -419,8 +420,8 @@ export default function GameStyleCase() {
                                     : "bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50"
                                 } ${showResult ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-base text-gray-900">{option.text}</span>
+                                <div className="flex flex-row-reverse items-center justify-between gap-3">
+                                  <span className="text-base text-gray-900 flex-1" {...rtlMixedTextProps}>{option.text}</span>
                                   {showCorrect && <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0" />}
                                   {showWrong && <XCircle className="w-6 h-6 text-red-600 shrink-0" />}
                                 </div>
@@ -451,7 +452,7 @@ export default function GameStyleCase() {
                               ✅ عالی! پاسخ صحیح است.
                             </p>
                             {currentStageData.orderText && (
-                              <p className="text-green-700 text-xs mt-1">
+                              <p className="text-green-700 text-xs mt-1" {...rtlMixedTextProps}>
                                 دستور ثبت شد: {currentStageData.orderText}
                               </p>
                             )}
@@ -464,9 +465,9 @@ export default function GameStyleCase() {
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4"
                           >
-                            <div className="flex items-start gap-2">
+                            <div className="flex flex-row-reverse items-start gap-2">
                               <Lightbulb className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                              <p className="text-yellow-800 text-sm">{currentStageData.hint}</p>
+                              <p className="text-yellow-800 text-sm flex-1" {...rtlMixedTextProps}>{currentStageData.hint}</p>
                             </div>
                           </motion.div>
                         )}

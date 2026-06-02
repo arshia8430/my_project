@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import {
   Plus,
@@ -23,6 +23,12 @@ import {
 } from "lucide-react";
 import { api, CaseData } from "../../services/api";
 import { logoutAdmin } from "../utils/adminAuth";
+import {
+  ltrTechnicalTextProps,
+  ltrTechnicalTextStyle,
+  rtlMixedTextProps,
+  rtlMixedTextStyle,
+} from "../utils/bidi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -216,7 +222,7 @@ function VitalsEditor({
           value={vitals.bp}
           onChange={(e) => set("bp", e.target.value)}
           placeholder="120/80"
-          {...ltrTextProps}
+          {...ltrTechnicalTextProps}
         />
       </Field>
       <Field label="GCS (3–15)">
@@ -281,7 +287,7 @@ function VitalsUpdateEditor({
               value={vitals[k] as string | number}
               onChange={(e) => set(k, e.target.value)}
               placeholder={k === "bp" ? "120/80" : "0"}
-              style={k === "bp" ? ltrTextStyle : undefined}
+              style={k === "bp" ? ltrTechnicalTextStyle : undefined}
               dir={k === "bp" ? "ltr" : undefined}
             />
           )}
@@ -445,7 +451,7 @@ function StageEditor({
                   ? "Enter the clinical narrative shown to the student…"
                   : "Enter the clinical question…"
               }
-              {...rtlTextProps}
+              {...rtlMixedTextProps}
             />
           </Field>
 
@@ -493,7 +499,7 @@ function StageEditor({
                         setOption(oi, { ...opt, text: e.target.value })
                       }
                       placeholder={`Option ${oi + 1}…`}
-                      {...rtlTextProps}
+                      {...rtlMixedTextProps}
                     />
 
                     <button
@@ -522,7 +528,7 @@ function StageEditor({
                   value={stage.hint ?? ""}
                   onChange={(e) => setField("hint", e.target.value)}
                   placeholder="Hint shown after a wrong answer…"
-                  {...rtlTextProps}
+                  {...rtlMixedTextProps}
                 />
               </Field>
 
@@ -534,7 +540,7 @@ function StageEditor({
                   value={stage.orderText ?? ""}
                   onChange={(e) => setField("orderText", e.target.value)}
                   placeholder="مثلاً: IV line 18G ×2، O₂ NRB 15 L/min"
-                  {...rtlTextProps}
+                  {...rtlMixedTextProps}
                 />
               </Field>
 
@@ -724,7 +730,7 @@ function CaseFormPanel({
                   )
                 }
                 placeholder="e.g. chest-pain-002"
-                {...ltrTextProps}
+                {...ltrTechnicalTextProps}
               />
             </Field>
             <Field label="Patient Name / Code" required>
@@ -734,7 +740,7 @@ function CaseFormPanel({
                 value={form.name}
                 onChange={(e) => setF("name", e.target.value)}
                 placeholder="مثلاً: بیمار SE-001"
-                {...rtlTextProps}
+                {...rtlMixedTextProps}
               />
             </Field>
           </div>
@@ -745,7 +751,7 @@ function CaseFormPanel({
               value={form.diagnosis}
               onChange={(e) => setF("diagnosis", e.target.value)}
               placeholder="مثلاً: Status Epilepticus"
-              {...rtlTextProps}
+              {...rtlMixedTextProps}
             />
           </Field>
           <div className="grid grid-cols-3 gap-4">
@@ -778,7 +784,7 @@ function CaseFormPanel({
                 value={form.category}
                 onChange={(e) => setF("category", e.target.value)}
                 placeholder="مثلاً: Emergency Medicine"
-                {...rtlTextProps}
+                {...rtlMixedTextProps}
               />
             </Field>
           </div>
@@ -790,7 +796,7 @@ function CaseFormPanel({
                 value={form.icd10_code}
                 onChange={(e) => setF("icd10_code", e.target.value.toUpperCase())}
                 placeholder="e.g. I63.9"
-                {...ltrTextProps}
+                {...ltrTechnicalTextProps}
               />
             </Field>
             <Field label="Case Type" required>
@@ -809,7 +815,7 @@ function CaseFormPanel({
                 className={inputCls}
                 value={initial?.created_at ? new Date(initial.created_at).toLocaleString() : "Will be set automatically"}
                 readOnly
-                {...ltrTextProps}
+                {...ltrTechnicalTextProps}
               />
             </Field>
           </div>
@@ -821,7 +827,7 @@ function CaseFormPanel({
                 value={form.position}
                 onChange={(e) => setF("position", e.target.value)}
                 placeholder="مثلاً: supine، HOB 30°"
-                {...rtlTextProps}
+                {...rtlMixedTextProps}
               />
             </Field>
             <Field label="Diet">
@@ -990,8 +996,8 @@ function PreviewModal({ c, onClose }: { c: CaseData; onClose: () => void }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
-            <h2 className="font-bold text-slate-800" dir="rtl" style={rtlTextStyle}>{c.diagnosis}</h2>
-            <p className="text-xs text-slate-400" dir="rtl" style={rtlTextStyle}>{c.name} · <span dir="ltr">{c.case_id}</span></p>
+            <h2 className="font-bold text-slate-800" dir="rtl" style={rtlMixedTextStyle}>{c.diagnosis}</h2>
+            <p className="text-xs text-slate-400" dir="rtl" style={rtlMixedTextStyle}>{c.name} · <span dir="ltr">{c.case_id}</span></p>
           </div>
           <button
             onClick={onClose}
@@ -1038,7 +1044,7 @@ function PreviewModal({ c, onClose }: { c: CaseData; onClose: () => void }) {
                     Stage {i + 1} · {s.type}
                   </span>
                 </div>
-                <p className="text-sm text-slate-700" dir="rtl" style={rtlTextStyle}>{s.question}</p>
+                <p className="text-sm text-slate-700" dir="rtl" style={rtlMixedTextStyle}>{s.question}</p>
                 {s.type === "question" && s.options && (
                   <div className="mt-3 space-y-1">
                     {s.options.map((o) => (
@@ -1055,7 +1061,7 @@ function PreviewModal({ c, onClose }: { c: CaseData; onClose: () => void }) {
                         ) : (
                           <XCircle size={12} className="text-slate-300" />
                         )}
-                        <span dir="rtl" style={rtlTextStyle}>{o.text}</span>
+                        <span dir="rtl" style={rtlMixedTextStyle}>{o.text}</span>
                       </div>
                     ))}
                   </div>
