@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { FileText, CheckCircle2 } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
+import { rtlMixedTextProps } from "../utils/bidi";
 
 export interface HospitalOrder {
   id: string;
@@ -36,11 +37,11 @@ export function HospitalOrderSheet({
       <CardContent className="pt-4 px-4">
         <div className="space-y-3 mb-4">
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-            <div className="text-xs text-blue-600 font-semibold mb-2">Patient: {patientName}</div>
+            <div className="text-xs text-blue-600 font-semibold mb-2" {...rtlMixedTextProps}>Patient: {patientName}</div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-blue-700 font-medium">Imp:</span>{" "}
-                <span className="text-gray-800">{diagnosis}</span>
+                <span className="text-gray-800" {...rtlMixedTextProps}>{diagnosis}</span>
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Cond:</span>{" "}
@@ -50,7 +51,7 @@ export function HospitalOrderSheet({
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Pos:</span>{" "}
-                <span className="text-gray-800">{position}</span>
+                <span className="text-gray-800" {...rtlMixedTextProps}>{position}</span>
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Diet:</span>{" "}
@@ -90,7 +91,7 @@ export function HospitalOrderSheet({
                     <span className="text-blue-900 font-mono font-bold text-sm min-w-[20px]">
                       {index + 1}.
                     </span>
-                    <span className="text-gray-900 text-sm flex-1 leading-relaxed">
+                    <span className="text-gray-900 text-sm flex-1 leading-relaxed" {...rtlMixedTextProps}>
                       {order.text}
                     </span>
                     {order.isCorrect === true && (

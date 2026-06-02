@@ -1,6 +1,6 @@
 # Clinical Mastery Backend API
 
-Backend سیستم آموزش تصمیم‌گیری بالینی با FastAPI و Python
+Backend سیستم آموزش تصمیم‌گیری بالینی با Python WSGI سازگار با cPanel Passenger
 
 ## نصب و راه‌اندازی
 
@@ -14,10 +14,10 @@ pip install -r requirements.txt
 ### 2. اجرای سرور
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python scripts/cpanel_smoke_test.py
 ```
 
-سرور روی `http://localhost:8000` اجرا می‌شود.
+برای cPanel، Passenger مستقیماً WSGI callable را اجرا می‌کند؛ smoke test بدون اجرای سرور HTTP همان callable را تست می‌کند.
 
 ### 3. مشاهده API Documentation
 
@@ -31,16 +31,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 backend/
 ├── app/
-│   ├── main.py              # نقطه ورود اصلی
+│   ├── main.py              # compatibility export for WSGI app
 │   ├── database.py          # تنظیمات دیتابیس
 │   ├── models.py            # مدل‌های SQLAlchemy
 │   ├── schemas.py           # Pydantic schemas
-│   ├── api/
-│   │   ├── cases.py         # API endpoints کیس‌ها
-│   │   ├── results.py       # API endpoints نتایج
-│   │   └── stats.py         # API endpoints آمار
+│   ├── wsgi.py              # plain synchronous WSGI routes mounted under /api
+│   ├── api/                 # compatibility modules
 │   └── data/
 │       └── seed_cases.py    # داده‌های اولیه
+├── cpanel_wsgi.py        # cPanel/Passenger startup file
+├── passenger_wsgi.py     # required compatibility filename for some cPanel setups
+├── wsgi_entry.py         # shared WSGI application used by both startup files
+├── scripts/
+│   └── cpanel_smoke_test.py  # Passenger-style WSGI smoke test
 ├── requirements.txt
 └── README.md
 ```
@@ -130,32 +133,22 @@ docker build -t clinical-mastery-api .
 docker run -p 8000:8000 clinical-mastery-api
 ```
 
-### با Gunicorn
-
-```bash
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
-```
-
 ### روی cPanel (Passenger / WSGI)
 
-Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند، اما FastAPI از نوع ASGI است.  
-بنابراین باید در ریشه‌ی `backend` فایل `passenger_wsgi.py` داشته باشید:
+Passenger به‌صورت پیش‌فرض WSGI اجرا می‌کند. این پروژه فایل‌های آماده‌ی `cpanel_wsgi.py` و `passenger_wsgi.py` دارد که هر دو از `wsgi_entry.py` یک WSGI application مشترک و synchronous می‌گیرند؛ `uvicorn`، event loop، `a2wsgi` یا `ASGIMiddleware` استفاده نمی‌شود.
 
-```python
-from a2wsgi import ASGIMiddleware
-from app.main import app
-
-application = ASGIMiddleware(app)
-```
-
-و در cPanel تنظیم کنید:
-- **Application startup file**: `passenger_wsgi.py`
+در cPanel تنظیم کنید:
+- **Application startup file**: `cpanel_wsgi.py`
 - **Application entry point**: `application`
+
+فایل `passenger_wsgi.py` را پاک نکنید؛ بعضی هاست‌ها حتی با تنظیم `cpanel_wsgi.py` هم وجود این فایل را بررسی می‌کنند.
+
+همه routeهای عمومی زیر `/api` هستند. برای تست شبیه Passenger بعد از فعال‌کردن virtualenv بزنید: `CPANEL_SCRIPT_NAME=/api python scripts/cpanel_smoke_test.py`.
 
 ## متغیرهای محیطی
 
-- `DATABASE_URL` - آدرس دیتابیس (پیش‌فرض: SQLite)
-- `SECRET_KEY` - کلید امنیتی برای JWT
+- `DATABASE_URL` - آدرس دیتابیس (پیش‌فرض: SQLite). روی cPanel مقدار نمونه: `sqlite:////home/clinicalexamir/apps/clinical-mastery/data/clinical_mastery.db`
+- `CORS_ORIGINS` - لیست originهای مجاز با کاما، مثل `https://clinicalexam.ir`
 - `ENVIRONMENT` - محیط اجرا (development/production)
 
 ## لایسنس
