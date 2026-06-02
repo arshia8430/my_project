@@ -4,6 +4,7 @@ import GameStyleCase from "./pages/GameStyleCase";
 import FinalResults from "./pages/FinalResults";
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
+import RouteError from "./pages/RouteError";
 import { isAdminAuthenticated } from "./utils/adminAuth";
 
 function ProtectedAdmin() {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: NewHome,
+    errorElement: <RouteError />,
   },
   {
     path: "/case/:caseId",
@@ -33,5 +35,9 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     Component: ProtectedAdmin,
+  },
+  {
+    path: "*",
+    Component: RouteError,
   },
 ]);
