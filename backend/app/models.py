@@ -15,6 +15,7 @@ class Case(Base):
     condition = Column(String, nullable=False)
     position = Column(String, nullable=False)
     diet = Column(String, nullable=False)
+    activity = Column(String, nullable=False, default="as tolerated")
     initial_vitals = Column(JSON, nullable=False)
     stages = Column(JSON, nullable=False)
     difficulty = Column(String, nullable=False)

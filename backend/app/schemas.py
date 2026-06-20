@@ -6,7 +6,10 @@ from datetime import datetime
 class Vitals(BaseModel):
     hr: int
     spo2: int
+    spo2Context: str | None = None
     bp: str
+    rr: int | None = None
+    temp: float | None = None
     gcs: int
 
 
@@ -26,6 +29,7 @@ class CaseBase(BaseModel):
     condition: str
     position: str
     diet: str
+    activity: str = "as tolerated"
     initial_vitals: Vitals
     stages: List[Stage]
     difficulty: str

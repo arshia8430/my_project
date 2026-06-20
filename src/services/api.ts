@@ -8,10 +8,14 @@ export interface CaseData {
   condition: string;
   position: string;
   diet: string;
+  activity?: string;
   initial_vitals: {
     hr: number;
     spo2: number;
+    spo2Context?: string;
     bp: string;
+    rr?: number;
+    temp?: number;
     gcs: number;
   };
   stages: any[];

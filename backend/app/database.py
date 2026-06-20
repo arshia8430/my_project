@@ -133,6 +133,10 @@ def _ensure_case_columns() -> None:
             conn.execute(
                 text("ALTER TABLE cases ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP")
             )
+        if "activity" not in cols:
+            conn.execute(
+                text("ALTER TABLE cases ADD COLUMN activity VARCHAR NOT NULL DEFAULT 'as tolerated'")
+            )
 
 
 def check_database() -> None:

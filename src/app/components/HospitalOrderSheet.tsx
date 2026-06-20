@@ -15,6 +15,8 @@ interface HospitalOrderSheetProps {
   condition: string;
   position: string;
   diet: string;
+  activity?: string;
+  caseType?: "emergency" | "clinic";
   orders: HospitalOrder[];
 }
 
@@ -24,6 +26,8 @@ export function HospitalOrderSheet({
   condition,
   position,
   diet,
+  activity,
+  caseType = "emergency",
   orders,
 }: HospitalOrderSheetProps) {
   return (
@@ -39,24 +43,34 @@ export function HospitalOrderSheet({
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
             <div className="text-xs text-blue-600 font-semibold mb-2" {...rtlMixedTextProps}>Patient: {patientName}</div>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <span className="text-blue-700 font-medium">Imp:</span>{" "}
-                <span className="text-gray-800" {...rtlMixedTextProps}>{diagnosis}</span>
-              </div>
-              <div>
-                <span className="text-blue-700 font-medium">Cond:</span>{" "}
-                <span className={condition === "urgent" || condition === "critical" ? "text-red-600 font-semibold" : "text-gray-800"}>
-                  {condition}
-                </span>
-              </div>
-              <div>
-                <span className="text-blue-700 font-medium">Pos:</span>{" "}
-                <span className="text-gray-800" {...rtlMixedTextProps}>{position}</span>
-              </div>
-              <div>
-                <span className="text-blue-700 font-medium">Diet:</span>{" "}
-                <span className="text-gray-800 uppercase">{diet}</span>
-              </div>
+              {caseType !== "clinic" && (
+                <>
+                  <details className="col-span-2">
+                    <summary className="text-blue-700 font-medium cursor-pointer select-none">Imp</summary>
+                    <span className="text-gray-800" {...rtlMixedTextProps}>{diagnosis}</span>
+                  </details>
+                  <div>
+                    <span className="text-blue-700 font-medium">Cond:</span>{" "}
+                    <span className={condition === "urgent" || condition === "critical" ? "text-red-600 font-semibold" : "text-gray-800"}>
+                      {condition}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 font-medium">Pos:</span>{" "}
+                    <span className="text-gray-800" {...rtlMixedTextProps}>{position}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 font-medium">Diet:</span>{" "}
+                    <span className="text-gray-800 uppercase">{diet}</span>
+                  </div>
+                  {activity && (
+                    <div>
+                      <span className="text-blue-700 font-medium">Activity:</span>{" "}
+                      <span className="text-gray-800 uppercase">{activity}</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -91,7 +105,7 @@ export function HospitalOrderSheet({
                     <span className="text-blue-900 font-mono font-bold text-sm min-w-[20px]">
                       {index + 1}.
                     </span>
-                    <span className="text-gray-900 text-sm flex-1 leading-relaxed" {...rtlMixedTextProps}>
+                    <span className="text-gray-900 text-sm flex-1 leading-relaxed whitespace-pre-wrap" {...rtlMixedTextProps}>
                       {order.text}
                     </span>
                     {order.isCorrect === true && (
