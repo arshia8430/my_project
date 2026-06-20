@@ -14,7 +14,10 @@ import { rtlMixedBlockProps, rtlMixedTextProps } from "../utils/bidi";
 interface Vitals {
   hr: number;
   spo2: number;
+  spo2Context?: string;
   bp: string;
+  rr?: number;
+  temp?: number;
   gcs: number;
 }
 
@@ -36,7 +39,7 @@ export default function GameStyleCase() {
 
   // Game state
   const [currentStage, setCurrentStage] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -76,7 +79,7 @@ export default function GameStyleCase() {
 
   // Deterioration timer — only for question stages
   useEffect(() => {
-    if (!caseData) return;
+    if (!caseData || caseData.case_type === "emergency") return;
     const stage = caseData.stages[currentStage];
     if (stage?.type !== "question") return;
 
@@ -110,16 +113,24 @@ export default function GameStyleCase() {
 
   const handleOptionSelect = useCallback((optionId: string) => {
     if (showResult) return;
-    setSelectedOption(optionId);
+    setSelectedOptions((prev) => {
+      const next = new Set(prev);
+      if (next.has(optionId)) next.delete(optionId);
+      else next.add(optionId);
+      return next;
+    });
   }, [showResult]);
 
   const handleSubmit = useCallback(() => {
-    if (!selectedOption || !caseData) return;
+    if (selectedOptions.size === 0 || !caseData) return;
     const stage = caseData.stages[currentStage];
     if (stage.type !== "question" || !stage.options) return;
 
-    const selected = stage.options.find((opt: any) => opt.id === selectedOption);
-    const correct = selected?.isCorrect ?? false;
+    const correctOptionIds = new Set(stage.options.filter((opt: any) => opt.isCorrect).map((opt: any) => opt.id));
+    const correct = selectedOptions.size === correctOptionIds.size && [...selectedOptions].every((id) => correctOptionIds.has(id));
+    const selectedTexts = stage.options
+      .filter((opt: any) => selectedOptions.has(opt.id))
+      .map((opt: any) => opt.text);
     const timeSpent = Math.floor((Date.now() - stageStartTime.current) / 1000);
 
     setAnswersLog((prev) => [
@@ -127,7 +138,7 @@ export default function GameStyleCase() {
       {
         stage_index: currentStage,
         question: stage.question,
-        selected_option: selected?.text ?? selectedOption,
+        selected_option: selectedTexts.join("، "),
         is_correct: correct,
         time_spent: timeSpent,
       },
@@ -154,14 +165,8 @@ export default function GameStyleCase() {
       setWrongAttempts((prev) => prev + 1);
       setTotalWrongAnswers((prev) => prev + 1);
 
-      if (selected?.text) {
-        setOrders((prev) => [
-          ...prev,
-          { id: `order-${currentStage}-${Date.now()}`, text: selected.text, isCorrect: false },
-        ]);
-      }
     }
-  }, [selectedOption, caseData, currentStage, vitals]);
+  }, [selectedOptions, caseData, currentStage, vitals]);
 
   const finishCase = useCallback(async (died: boolean) => {
     if (!caseData) return;
@@ -206,7 +211,7 @@ export default function GameStyleCase() {
     const nextStage = currentStage + 1;
     if (nextStage < caseData.stages.length) {
       setCurrentStage(nextStage);
-      setSelectedOption(null);
+      setSelectedOptions(new Set());
       setShowResult(false);
       setIsCorrect(false);
       setShowHint(false);
@@ -228,7 +233,7 @@ export default function GameStyleCase() {
   }, [caseData, currentStage, finishCase]);
 
   const handleTryAgain = useCallback(() => {
-    setSelectedOption(null);
+    setSelectedOptions(new Set());
     setShowResult(false);
     setIsCorrect(false);
   }, []);
@@ -329,11 +334,24 @@ export default function GameStyleCase() {
                 <div className={`text-lg font-bold font-mono ${vitals.spo2 < 90 ? "text-red-400" : vitals.spo2 < 95 ? "text-yellow-300" : "text-white"}`}>
                   {vitals.spo2}%
                 </div>
+                {vitals.spo2Context && <div className="text-[10px] text-cyan-100" {...rtlMixedTextProps}>{vitals.spo2Context}</div>}
               </div>
               <div className="text-center">
                 <div className="text-xs text-cyan-200">BP</div>
                 <div className="text-lg font-bold text-white font-mono">{vitals.bp}</div>
               </div>
+              {vitals.rr !== undefined && (
+                <div className="text-center">
+                  <div className="text-xs text-cyan-200">RR</div>
+                  <div className="text-lg font-bold text-white font-mono">{vitals.rr}</div>
+                </div>
+              )}
+              {vitals.temp !== undefined && (
+                <div className="text-center">
+                  <div className="text-xs text-cyan-200">T</div>
+                  <div className="text-lg font-bold text-white font-mono">{vitals.temp}°C</div>
+                </div>
+              )}
               <div className="text-center">
                 <div className="text-xs text-cyan-200">GCS</div>
                 <div className={`text-lg font-bold font-mono ${vitals.gcs <= 8 ? "text-red-400" : vitals.gcs <= 12 ? "text-yellow-300" : "text-white"}`}>
@@ -377,13 +395,20 @@ export default function GameStyleCase() {
                             {currentStageData.question}
                           </p>
                         </div>
-                        <Button
-                          onClick={handleStoryNext}
-                          className="w-full bg-purple-600 hover:bg-purple-700"
-                          size="lg"
-                        >
-                          {currentStage < stages.length - 1 ? "ادامه ←" : "مشاهده نتایج"}
-                        </Button>
+                        <div className="flex gap-3">
+                          {currentStage > 0 && (
+                            <Button type="button" variant="outline" onClick={() => setCurrentStage((s) => Math.max(0, s - 1))} size="lg">
+                              بازگشت
+                            </Button>
+                          )}
+                          <Button
+                            onClick={handleStoryNext}
+                            className="flex-1 bg-purple-600 hover:bg-purple-700"
+                            size="lg"
+                          >
+                            {currentStage < stages.length - 1 ? "ادامه ←" : "مشاهده نتایج"}
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       /* Question Stage */
@@ -399,7 +424,7 @@ export default function GameStyleCase() {
 
                         <div className="space-y-3 mb-6">
                           {(currentStageData.options ?? []).map((option: any) => {
-                            const isSelected = selectedOption === option.id;
+                            const isSelected = selectedOptions.has(option.id);
                             const showCorrect = showResult && option.isCorrect;
                             const showWrong = showResult && isSelected && !option.isCorrect;
 
@@ -473,11 +498,16 @@ export default function GameStyleCase() {
                         )}
 
                         <div className="flex gap-3">
+                          {currentStage > 0 && !showResult && (
+                            <Button type="button" variant="outline" onClick={() => setCurrentStage((s) => Math.max(0, s - 1))} size="lg">
+                              بازگشت
+                            </Button>
+                          )}
                           {!showResult && (
                             <>
                               <Button
                                 onClick={handleSubmit}
-                                disabled={!selectedOption}
+                                disabled={selectedOptions.size === 0}
                                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300"
                                 size="lg"
                               >
@@ -533,6 +563,8 @@ export default function GameStyleCase() {
               condition={caseData.condition}
               position={caseData.position}
               diet={caseData.diet}
+              activity={(caseData as any).activity}
+              caseType={caseData.case_type}
               orders={orders}
             />
           </div>

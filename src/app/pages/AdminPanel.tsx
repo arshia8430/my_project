@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import {
   Plus,
@@ -35,7 +35,10 @@ import {
 interface VitalsData {
   hr: number;
   spo2: number;
+  spo2Context?: string;
   bp: string;
+  rr: number;
+  temp: number;
   gcs: number;
 }
 
@@ -61,6 +64,7 @@ interface CaseForm {
   condition: string;
   position: string;
   diet: string;
+  activity: string;
   difficulty: string;
   category: string;
   icd10_code: string;
@@ -71,7 +75,7 @@ interface CaseForm {
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
-const defaultVitals: VitalsData = { hr: 80, spo2: 98, bp: "120/80", gcs: 15 };
+const defaultVitals: VitalsData = { hr: 80, spo2: 98, spo2Context: "room air", bp: "120/80", rr: 16, temp: 37, gcs: 15 };
 
 const defaultForm = (): CaseForm => ({
   case_id: "",
@@ -80,6 +84,7 @@ const defaultForm = (): CaseForm => ({
   condition: "moderate",
   position: "supine",
   diet: "regular",
+  activity: "as tolerated",
   difficulty: "medium",
   category: "Emergency Medicine",
   icd10_code: "R69",
@@ -190,7 +195,7 @@ function VitalsEditor({
   const set = (k: keyof VitalsData, val: string) => {
     onChange({
       ...vitals,
-      [k]: k === "bp" ? val : Number(val),
+      [k]: k === "bp" || k === "spo2Context" ? val : Number(val),
     });
   };
   return (
@@ -215,6 +220,16 @@ function VitalsEditor({
           max={100}
         />
       </Field>
+      <Field label="SpO₂ Context">
+        <input
+          type="text"
+          className={inputCls}
+          value={vitals.spo2Context ?? ""}
+          onChange={(e) => set("spo2Context", e.target.value)}
+          placeholder="room air / mask 10 L/min"
+          {...rtlMixedTextProps}
+        />
+      </Field>
       <Field label="BP (systolic/diastolic)">
         <input
           type="text"
@@ -223,6 +238,27 @@ function VitalsEditor({
           onChange={(e) => set("bp", e.target.value)}
           placeholder="120/80"
           {...ltrTechnicalTextProps}
+        />
+      </Field>
+      <Field label="Respiratory Rate">
+        <input
+          type="number"
+          className={inputCls}
+          value={vitals.rr}
+          onChange={(e) => set("rr", e.target.value)}
+          min={0}
+          max={80}
+        />
+      </Field>
+      <Field label="Temperature (°C)">
+        <input
+          type="number"
+          step="0.1"
+          className={inputCls}
+          value={vitals.temp}
+          onChange={(e) => set("temp", e.target.value)}
+          min={25}
+          max={45}
         />
       </Field>
       <Field label="GCS (3–15)">
@@ -254,11 +290,11 @@ function VitalsUpdateEditor({
       delete next[k];
       onChange(next);
     } else {
-      onChange({ ...vitals, [k]: k === "bp" ? "120/80" : 80 });
+      onChange({ ...vitals, [k]: k === "bp" ? "120/80" : k === "spo2Context" ? "room air" : k === "temp" ? 37 : k === "rr" ? 16 : 80 });
     }
   };
   const set = (k: keyof VitalsData, val: string) => {
-    onChange({ ...vitals, [k]: k === "bp" ? val : Number(val) });
+    onChange({ ...vitals, [k]: k === "bp" || k === "spo2Context" ? val : Number(val) });
   };
 
   return (
@@ -266,7 +302,7 @@ function VitalsUpdateEditor({
       <p className="text-xs text-slate-400">
         Toggle a field to include it in the vitals change after this action.
       </p>
-      {(["hr", "spo2", "bp", "gcs"] as (keyof VitalsData)[]).map((k) => (
+      {(["hr", "spo2", "spo2Context", "bp", "rr", "temp", "gcs"] as (keyof VitalsData)[]).map((k) => (
         <div key={k} className="flex items-center gap-2">
           <button
             type="button"
@@ -282,13 +318,13 @@ function VitalsUpdateEditor({
           <span className="text-xs font-mono text-slate-600 w-12">{k.toUpperCase()}</span>
           {k in vitals && (
             <input
-              type={k === "bp" ? "text" : "number"}
+              type={k === "bp" || k === "spo2Context" ? "text" : "number"}
               className="rounded border border-slate-200 px-2 py-1 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-blue-400"
               value={vitals[k] as string | number}
               onChange={(e) => set(k, e.target.value)}
-              placeholder={k === "bp" ? "120/80" : "0"}
-              style={k === "bp" ? ltrTechnicalTextStyle : undefined}
-              dir={k === "bp" ? "ltr" : undefined}
+              placeholder={k === "bp" ? "120/80" : k === "spo2Context" ? "room air / mask" : "0"}
+              style={k === "bp" ? ltrTechnicalTextStyle : k === "spo2Context" ? rtlMixedTextStyle : undefined}
+              dir={k === "bp" ? "ltr" : k === "spo2Context" ? "rtl" : undefined}
             />
           )}
         </div>
@@ -534,9 +570,8 @@ function StageEditor({
 
               {/* Order text */}
               <Field label="Order Sheet Entry (optional)">
-                <input
-                  type="text"
-                  className={inputCls}
+                <textarea
+                  className={`${inputCls} min-h-[70px] resize-y whitespace-pre-wrap`}
                   value={stage.orderText ?? ""}
                   onChange={(e) => setField("orderText", e.target.value)}
                   placeholder="مثلاً: IV line 18G ×2، O₂ NRB 15 L/min"
@@ -844,6 +879,18 @@ function CaseFormPanel({
                 <option value="liquid">Liquid</option>
               </select>
             </Field>
+            <Field label="Activity">
+              <select
+                className={selectCls}
+                value={form.activity}
+                onChange={(e) => setF("activity", e.target.value)}
+              >
+                <option value="as tolerated">As tolerated</option>
+                <option value="bed rest">Bed rest</option>
+                <option value="up with assistance">Up with assistance</option>
+                <option value="ambulate">Ambulate</option>
+              </select>
+            </Field>
           </div>
         </section>
 
@@ -1012,8 +1059,10 @@ function PreviewModal({ c, onClose }: { c: CaseData; onClose: () => void }) {
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: "HR", value: `${c.initial_vitals.hr} bpm` },
-              { label: "SpO₂", value: `${c.initial_vitals.spo2}%` },
+              { label: "SpO₂", value: `${c.initial_vitals.spo2}%${(c.initial_vitals as any).spo2Context ? ` (${(c.initial_vitals as any).spo2Context})` : ""}` },
               { label: "BP", value: c.initial_vitals.bp },
+              { label: "RR", value: (c.initial_vitals as any).rr ?? "—" },
+              { label: "T", value: (c.initial_vitals as any).temp ? `${(c.initial_vitals as any).temp}°C` : "—" },
               { label: "GCS", value: c.initial_vitals.gcs },
             ].map((v) => (
               <div key={v.label} className="bg-slate-50 rounded-lg p-3 text-center">
@@ -1220,6 +1269,7 @@ export default function AdminPanel() {
       condition: c.condition,
       position: c.position,
       diet: c.diet,
+      activity: (c as any).activity ?? "as tolerated",
       difficulty: c.difficulty,
       category: c.category,
       icd10_code: c.icd10_code ?? "R69",
@@ -1285,10 +1335,17 @@ export default function AdminPanel() {
       {/* Top bar */}
       <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-4 sticky top-0 z-20">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => {
+            if (view === "form") {
+              setView("list");
+              setEditingCase(null);
+            } else {
+              navigate("/");
+            }
+          }}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition"
         >
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={16} /> {view === "form" ? "Back to cases" : "Back"}
         </button>
         <div className="w-px h-5 bg-slate-200" />
         <div className="flex items-center gap-2">

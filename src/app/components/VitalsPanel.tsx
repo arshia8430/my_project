@@ -6,6 +6,7 @@ export interface VitalsData {
   bp: string;
   rr: number;
   spo2: number;
+  spo2Context?: string;
   temp: number;
   gcs: number;
 }
@@ -117,7 +118,7 @@ export function VitalsPanel({ vitals }: VitalsPanelProps) {
             )}
           </div>
           <div className="font-mono text-2xl font-bold">{vitals.spo2}%</div>
-          <div className="text-xs opacity-75">oxygen saturation</div>
+          <div className="text-xs opacity-75">oxygen saturation{vitals.spo2Context ? ` • ${vitals.spo2Context}` : ""}</div>
         </div>
 
         <div className={`${tempStatus.color} border-2 rounded-lg p-3 transition-all duration-300`}>
